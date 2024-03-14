@@ -1,8 +1,7 @@
 import sys
 import speech_recognition as sr
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QComboBox
-from PyQt6.QtGui import QTextCursor
-import pyttsx3
+
 
 class Notepad(QWidget):
     def __init__(self):
