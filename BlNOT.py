@@ -1,12 +1,15 @@
 import sys
 import speech_recognition as sr
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QComboBox
-
+from PyQt6.QtGui import QPainter, QColor
+from PyQt6.QtCore import Qt
 
 class Notepad(QWidget):
     def __init__(self):
         super().__init__()
         self.notes = []
+        self.painting = False
+        self.last_point = None
         layout = QVBoxLayout()
 
         self.input_text = QTextEdit()
@@ -17,6 +20,10 @@ class Notepad(QWidget):
         add_button = QPushButton('Добавить запись')
         add_button.clicked.connect(self.add_note)
         button_layout.addWidget(add_button)
+
+        draw_button = QPushButton('Рисунок')
+        draw_button.clicked.connect(self.start_drawing)
+        button_layout.addWidget(draw_button)
 
         delete_button = QPushButton('Удалить запись')
         delete_button.clicked.connect(self.delete_note)
@@ -72,6 +79,24 @@ class Notepad(QWidget):
     def save_to_db(self, note):
         # Реализация сохранения записи в базу данных
         pass
+
+    def start_drawing(self):
+        self.painting = True
+
+    def mousePressEvent(self, event):
+        if self.painting:
+            self.last_point = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if self.painting:
+            painter = QPainter(self.input_text.viewport())
+            painter.setPen(QColor(Qt.GlobalColor.black))
+            painter.drawText(event.pos(), "Текст")
+            painter.end()
+
+    def mouseReleaseEvent(self, event):
+        if self.painting:
+            self.painting = False
 
     def voice_input(self):
         recognizer = sr.Recognizer()
