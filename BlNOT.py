@@ -3,7 +3,59 @@ import speech_recognition as sr
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QComboBox
 from PyQt6.QtGui import QPainter, QColor, QPen
 from PyQt6.QtCore import Qt, QPoint
+import sqlite3
+class Notepad(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.notes = []
+        self.initUI()
+        self.create_db()
 
+    def initUI(self):
+        layout = QVBoxLayout()
+
+        self.input_text = QTextEdit()
+        layout.addWidget(self.input_text)
+
+        button_layout = QHBoxLayout()
+
+        add_button = QPushButton('Добавить запись')
+        add_button.clicked.connect(self.add_note)
+        button_layout.addWidget(add_button)
+
+        save_button = QPushButton('Сохранить')
+        save_button.clicked.connect(self.save_notes)
+        button_layout.addWidget(save_button)
+
+        clear_button = QPushButton('Очистить текст')
+        clear_button.clicked.connect(self.clear_text)
+        button_layout.addWidget(clear_button)
+
+        layout.addLayout(button_layout)
+
+        self.setLayout(layout)
+
+    def create_db(self):
+        self.connection = sqlite3.connect('notes.db')
+        self.cursor = self.connection.cursor()
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, text TEXT)')
+
+    def add_note(self):
+        note = self.input_text.toPlainText()
+        self.notes.append(note)
+        self.input_text.clear()
+
+    def save_notes(self):
+        for note in self.notes:
+            self.save_to_db(note)
+        self.notes.clear()
+
+    def save_to_db(self, note):
+        self.cursor.execute('INSERT INTO notes (text) VALUES (?)', (note,))
+        self.connection.commit()
+
+    def clear_text(self):
+        self.input_text.clear()
 class DrawingWidget(QWidget):
     def __init__(self):
         super().__init__()
