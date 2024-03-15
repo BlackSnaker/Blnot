@@ -1,19 +1,101 @@
 import sys
 import speech_recognition as sr
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QComboBox
-from PyQt6.QtGui import QPainter, QColor
-from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPainter, QColor, QPen
+from PyQt6.QtCore import Qt, QPoint
+
+class DrawingWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.last_point = QPoint()
+        self.current_point = QPoint()
+        self.drawing = False
+        self.lines = []
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.last_point = event.pos()
+            self.drawing = True
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() & Qt.MouseButton.LeftButton and self.drawing:
+            self.current_point = event.pos()
+            self.lines.append((self.last_point, self.current_point))
+            self.last_point = self.current_point
+            self.update()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drawing = False
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        pen = QPen()
+        pen.setColor(QColor(Qt.GlobalColor.black))
+        pen.setWidth(2)
+        painter.setPen(pen)
+
+        for line in self.lines:
+            painter.drawLine(line[0], line[1])
 
 class Notepad(QWidget):
     def __init__(self):
         super().__init__()
         self.notes = []
-        self.painting = False
-        self.last_point = None
         layout = QVBoxLayout()
 
         self.input_text = QTextEdit()
         layout.addWidget(self.input_text)
+
+        self.drawing_widget = DrawingWidget()
+        layout.addWidget(self.drawing_widget)
+
+        button_layout = QHBoxLayout()
+
+        clear_button = QPushButton('Очистить рисунок')
+        clear_button.clicked.connect(self.clear_drawing)
+        button_layout.addWidget(clear_button)
+
+        layout.addLayout(button_layout)
+
+        self.setLayout(layout)
+
+    def clear_drawing(self):
+        self.drawing_widget.lines.clear()
+        self.drawing_widget.update()
+
+class DrawingWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.last_point = None
+        self.painting = False
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setPen(QColor(Qt.GlobalColor.black))
+        painter.drawLine(self.last_point, event.pos() if self.last_point else event.pos())
+
+    def mousePressEvent(self, event):
+        self.last_point = event.pos()
+    
+    def mouseMoveEvent(self, event):
+        self.update()
+
+    def mouseReleaseEvent(self, event):
+        self.last_point = None
+        self.update()
+
+class Notepad(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.notes = []
+        layout = QVBoxLayout()
+
+        self.input_text = QTextEdit()
+        layout.addWidget(self.input_text)
+
+        self.drawing_widget = DrawingWidget()
+        layout.addWidget(self.drawing_widget)
 
         button_layout = QHBoxLayout()
 
@@ -21,24 +103,12 @@ class Notepad(QWidget):
         add_button.clicked.connect(self.add_note)
         button_layout.addWidget(add_button)
 
-        draw_button = QPushButton('Рисунок')
-        draw_button.clicked.connect(self.start_drawing)
-        button_layout.addWidget(draw_button)
-
-        delete_button = QPushButton('Удалить запись')
-        delete_button.clicked.connect(self.delete_note)
-        button_layout.addWidget(delete_button)
-
-        edit_button = QPushButton('Вставить запись')
-        edit_button.clicked.connect(self.edit_note)
-        button_layout.addWidget(edit_button)
-
         clear_button = QPushButton('Очистить текст')
         clear_button.clicked.connect(self.clear_text)
         button_layout.addWidget(clear_button)
 
         color_dropdown = QComboBox()
-        colors = ['red', 'green', 'blue', 'yellow', 'purple']
+        colors = ['Красный', 'Зелёный', 'Синий', 'Жёлтый', 'Пурпурный']
         color_dropdown.addItems(colors)
         color_dropdown.currentTextChanged.connect(self.apply_color)
         button_layout.addWidget(color_dropdown)
@@ -60,18 +130,14 @@ class Notepad(QWidget):
         # Реализация удаления записи из базы данных
         pass
 
-    def edit_note(self):
-        # Реализация редактирования записи из базы данных
-        pass
-
     def clear_text(self):
         self.input_text.clear()
 
     def apply_color(self, color):
         selected_text = self.input_text.textCursor().selectedText()
         if selected_text:
-            color_code = {'red': '#FF0000', 'green': '#00FF00', 'blue': '#0000FF',
-                          'yellow': '#FFFF00', 'purple': '#800080'}
+            color_code = {'Красный': '#FF0000', 'Зелёный': '#00FF00', 'Синий': '#0000FF',
+                          'Жёлтый': '#FFFF00', 'Пурпурный': '#800080'}
             new_text = f'<font color="{color_code[color]}">{selected_text}</font>'
             cursor = self.input_text.textCursor()
             cursor.insertHtml(new_text)
@@ -79,24 +145,6 @@ class Notepad(QWidget):
     def save_to_db(self, note):
         # Реализация сохранения записи в базу данных
         pass
-
-    def start_drawing(self):
-        self.painting = True
-
-    def mousePressEvent(self, event):
-        if self.painting:
-            self.last_point = event.pos()
-
-    def mouseMoveEvent(self, event):
-        if self.painting:
-            painter = QPainter(self.input_text.viewport())
-            painter.setPen(QColor(Qt.GlobalColor.black))
-            painter.drawText(event.pos(), "Текст")
-            painter.end()
-
-    def mouseReleaseEvent(self, event):
-        if self.painting:
-            self.painting = False
 
     def voice_input(self):
         recognizer = sr.Recognizer()
