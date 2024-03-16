@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QMessageBox, QFileDialog
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QColorDialog, QMessageBox, QFileDialog
 import speech_recognition as sr
 
 class NotepadApp(QWidget):
@@ -23,10 +23,14 @@ class NotepadApp(QWidget):
         voice_button = QPushButton('Голосовой ввод')
         voice_button.clicked.connect(self.voice_input)
         
+        color_button = QPushButton('Изменить цвет текста')
+        color_button.clicked.connect(self.change_text_color)
+        
         button_layout = QHBoxLayout()
         button_layout.addWidget(add_button)
         button_layout.addWidget(save_button)
         button_layout.addWidget(voice_button)
+        button_layout.addWidget(color_button)
 
         self.layout.addStretch(1)
         self.layout.addLayout(button_layout)
@@ -35,7 +39,7 @@ class NotepadApp(QWidget):
 
     def add_note(self):
         note_input = QTextEdit()
-        note_input.setStyleSheet("background-color: darkyellow; border: 2px solid black;")  # Выделение поля ввода
+      
         save_button = QPushButton('Сохранить запись')
         save_button.clicked.connect(lambda: self.save_note(note_input))
         
@@ -88,6 +92,15 @@ class NotepadApp(QWidget):
         note_layout.addWidget(save_button)
 
         self.notes_layout.addLayout(note_layout)
+
+    def change_text_color(self):
+        color = QColorDialog.getColor()
+        
+        for layout_index in range(self.notes_layout.count()):
+            layout_item = self.notes_layout.itemAt(layout_index)
+            if layout_item is not None:
+                text_edit = layout_item.itemAt(0).widget()  # Получаем QTextEdit из текущего Layout
+                text_edit.setTextColor(color)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
