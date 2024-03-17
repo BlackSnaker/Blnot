@@ -1,109 +1,108 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTextEdit, QColorDialog, QMessageBox, QFileDialog
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.textinput import TextInput
+from kivy.uix.button import Button
+from kivy.uix.popup import Popup
+from kivy.uix.colorpicker import ColorPicker
+from kivy.uix.filechooser import FileChooserListView
 import speech_recognition as sr
+import pyperclip
 
-class NotepadApp(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.notes = []
-        self.initUI()
 
-    def initUI(self):
-        self.layout = QVBoxLayout()
+class Notepad(App):
+    def build(self):
+        self.title = 'Простой блокнот на Kivy'
 
-        self.notes_layout = QVBoxLayout()
-        self.layout.addLayout(self.notes_layout)
+        # Создание текстового поля
+        self.text_input = TextInput(size_hint=(1, 0.8))
 
-        add_button = QPushButton('+')
-        add_button.clicked.connect(self.add_note)
-        
-        save_button = QPushButton('Сохранить записи в файл')
-        save_button.clicked.connect(self.save_notes)
-        
-        voice_button = QPushButton('Голосовой ввод')
-        voice_button.clicked.connect(self.voice_input)
-        
-        color_button = QPushButton('Изменить цвет текста')
-        color_button.clicked.connect(self.change_text_color)
-        
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(add_button)
-        button_layout.addWidget(save_button)
-        button_layout.addWidget(voice_button)
-        button_layout.addWidget(color_button)
+        # Создание кнопки "Сохранить"
+        save_button = Button(text='Сохранить', size_hint=(0.3, 0.1), on_press=self.save_text)
 
-        self.layout.addStretch(1)
-        self.layout.addLayout(button_layout)
+        # Создание кнопки "Удалить"
+        delete_button = Button(text='Удалить', size_hint=(0.3, 0.1), on_press=self.delete_text)
 
-        self.setLayout(self.layout)
+        # Создание кнопки "Голосовой ввод"
+        voice_input_button = Button(text='Голосовой ввод', size_hint=(0.3, 0.1), on_press=self.voice_input)
 
-    def add_note(self):
-        note_input = QTextEdit()
-      
-        save_button = QPushButton('Сохранить запись')
-        save_button.clicked.connect(lambda: self.save_note(note_input))
-        
-        note_layout = QHBoxLayout()
-        note_layout.addWidget(note_input)
-        note_layout.addWidget(save_button)
+        # Создание кнопки "Контекстное меню"
+        context_menu_button = Button(text='Контекстное меню', size_hint=(0.3, 0.1), on_press=self.show_context_menu)
 
-        self.notes_layout.addLayout(note_layout)
+        # Создание кнопки "Выбрать цвет текста"
+        color_picker_button = Button(text='Выбрать цвет текста', size_hint=(0.3, 0.1), on_press=self.show_color_picker)
 
-    def save_note(self, note_input):
-        note_text = note_input.toPlainText()
-        self.notes.append(note_text)
+        # Создание кнопки "Сохранить через FilePicker"
+        file_picker_button = Button(text='Сохранить через FilePicker', size_hint=(0.3, 0.1), on_press=self.save_with_file_picker)
 
-    def save_notes(self):
-        file_name, _ = QFileDialog.getSaveFileName(self, 'Сохранить файл', '', 'Text Files (*.txt)')
-        
-        if file_name:
-            try:
-                with open(file_name, 'w') as file:
-                    for note in self.notes:
-                        file.write(note + '\n')
-                QMessageBox.information(self, 'Успех', 'Записи успешно сохранены в файл')
-            except Exception as e:
-                QMessageBox.critical(self, 'Ошибка', f'Ошибка при сохранении файла: {str(e)}')
+        # Создание главного макета
+        layout = BoxLayout(orientation='vertical')
+        layout.add_widget(self.text_input)
 
-    def voice_input(self):
+        # Создание макета для кнопок
+        buttons_layout = BoxLayout(orientation='horizontal', size_hint=(1, 0.4))
+        buttons_layout.add_widget(save_button)
+        buttons_layout.add_widget(delete_button)
+        buttons_layout.add_widget(voice_input_button)
+        buttons_layout.add_widget(context_menu_button)
+        buttons_layout.add_widget(color_picker_button)
+        buttons_layout.add_widget(file_picker_button)
+        layout.add_widget(buttons_layout)
+
+        return layout
+
+    # Метод для сохранения текста в файл
+    def save_text(self, instance):
+        filename = "saved_text.txt"
+        with open(filename, 'w') as f:
+            f.write(self.text_input.text)
+
+    # Метод для удаления текста из поля ввода
+    def delete_text(self, instance):
+        self.text_input.text = ''
+
+    # Метод для голосового ввода текста
+    def voice_input(self, instance):
         recognizer = sr.Recognizer()
-        
         with sr.Microphone() as source:
-            print("Скажите что-нибудь...")
+            print("Говорите что-нибудь...")
             audio = recognizer.listen(source)
-        
+
         try:
-            text = recognizer.recognize_google(audio, language='ru-RU')
-            self.add_voice_note_to_ui(text)
+            text = recognizer.recognize_google(audio, language="ru-RU")
+            self.text_input.text += text
         except sr.UnknownValueError:
-            print("Извините, не удалось распознать речь")
+            print("Голос не распознан")
         except sr.RequestError as e:
-            print(f"Ошибка сервиса распознавания речи; {e}")
+            print("Ошибка сервиса распознавания: {0}".format(e))
 
-    def add_voice_note_to_ui(self, text):
-        note_input = QTextEdit()
-        note_input.setPlainText(text)
-        
-        save_button = QPushButton('Сохранить запись')
-        save_button.clicked.connect(lambda: self.save_note(note_input))
-        
-        note_layout = QHBoxLayout()
-        note_layout.addWidget(note_input)
-        note_layout.addWidget(save_button)
+    # Метод для отображения контекстного меню
+    def show_context_menu(self, instance):
+        text_from_clipboard = pyperclip.paste()
+        self.text_input.text += text_from_clipboard
 
-        self.notes_layout.addLayout(note_layout)
+    # Метод для отображения палитры выбора цвета текста
+    def show_color_picker(self, instance):
+        color_picker = ColorPicker()
+        color_popup = Popup(title='Выберите цвет текста', content=color_picker, size_hint=(None, None), size=(400, 400))
+        color_picker.bind(color=self.set_text_color)
+        color_popup.open()
 
-    def change_text_color(self):
-        color = QColorDialog.getColor()
-        
-        for layout_index in range(self.notes_layout.count()):
-            layout_item = self.notes_layout.itemAt(layout_index)
-            if layout_item is not None:
-                text_edit = layout_item.itemAt(0).widget()  # Получаем QTextEdit из текущего Layout
-                text_edit.setTextColor(color)
+    # Метод для установки цвета текста
+    def set_text_color(self, instance, color):
+        self.text_input.foreground_color = color
+
+    # Метод для сохранения текста в файл через FilePicker
+    def save_with_file_picker(self, instance):
+        file_chooser = FileChooserListView()
+        file_chooser.bind(on_submit=self.save_file)
+        popup = Popup(title='Выберите файл для сохранения', content=file_chooser, size_hint=(None, None), size=(400, 400))
+        popup.open()
+
+    # Метод для сохранения текста в выбранный файл
+    def save_file(self, instance, file_path, file_name):
+        with open(file_path, 'w') as f:
+            f.write(self.text_input.text)
+
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    notepad_app = NotepadApp()
-    notepad_app.show()
-    sys.exit(app.exec())
+    Notepad().run()
