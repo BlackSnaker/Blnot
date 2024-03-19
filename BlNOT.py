@@ -22,9 +22,9 @@ class FunctionsTab(TabbedPanelHeader):
         save_button = Button(text='Сохранить', size_hint=(1, None), height=50, background_color=(0.3, 0.7, 0.5, 1))
         delete_button = Button(text='Удалить', size_hint=(1, None), height=50, background_color=(0.9, 0.2, 0.2, 1))
         voice_input_button = Button(text='Голосовой ввод', size_hint=(1, None), height=50, background_color=(0.5, 0.5, 0.8, 1))
-        context_menu_button = Button(text='Контекстное меню', size_hint=(1, None), height=50, background_color=(0.7, 0.7, 0.7, 1))
+        context_menu_button = Button(text='Вставить текст', size_hint=(1, None), height=50, background_color=(0.7, 0.7, 0.7, 1))
         color_picker_button = Button(text='Выбрать цвет текста', size_hint=(1, None), height=50, background_color=(0.9, 0.5, 0.1, 1))
-        file_picker_button = Button(text='Сохранить через FilePicker', size_hint=(1, None), height=50, background_color=(0.2, 0.7, 0.9, 1))
+        file_picker_button = Button(text='Сохранить в файлы', size_hint=(1, None), height=50, background_color=(0.2, 0.7, 0.9, 1))
 
         # Привязка кнопок к функциям
         save_button.bind(on_press=self.save_text)
@@ -98,7 +98,7 @@ class FunctionsTab(TabbedPanelHeader):
 
 class Notepad(App):
     def build(self):
-        self.title = 'Простой блокнот на Kivy'
+        self.title = 'блокнот'
 
         # Создание текстового поля
         self.text_input = TextInput(size_hint=(1, 0.8))
